@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<a href = 'javascript:
+/* Credit: http://www.icetee.org/OTHER/bookmarklets/libraryofbabel.html */
+function playmusic() {
+	updatemode();
+	updateattack();
+	updatedecay();
+
+    var audio = new (window.AudioContext || window.webkitAudioContext)(),
+        position = 0,
+        scale = { /* Frequencies for each character, everything not declared will be paused*/
+a:196.00,b:207.65,c:220.00,d:233.08,e:246.94,f:261.63,g:277.18,h:293.66,i:311.13,j:329.63,k:349.23,l:369.99,m:392.00,n:415.30,o:440.00,p:466.16,q:493.88,r:523.25,s:554.37,t:587.33,u:622.25,v:659.25,w:698.46,x:739.99,y:783.99,z:830.61
+        },
+        song = document.getElementById("textblock").innerHTML.replace(/\n/gi, "");
+
+    setInterval(play, 1000 / 4);
+
+    function createOscillator(freq) {
+        var gain = audio.createGain(),
+            osc  = audio.createOscillator();
+
+        gain.connect(audio.destination);
+        gain.gain.setValueAtTime(0, audio.currentTime);
+        gain.gain.linearRampToValueAtTime(1, audio.currentTime + attack / 1000);
+        gain.gain.linearRampToValueAtTime(0, audio.currentTime + decay / 1000);
+
+        osc.frequency.value = freq;
+        osc.type = mode;
+        osc.connect(gain);
+        osc.start(0);
+
+        setTimeout(function () {
+            osc.stop(0);
+            osc.disconnect(gain);
+            gain.disconnect(audio.destination);
+        }, decay);
+    }
+
+    function play() {
+        var note = song.charAt(position),
+            freq = scale[note];
+        position += 1;
+        if (position >= song.length) {
+            position = 0;
+        }
+        if (freq) {
+            createOscillator(freq);
+        }
+    }
+};
+
+function addcontrols() {
+    var li0 = document.createElement("li");
+    li0.style.fontFamily = "Courier";
+    li0.innerHTML = "&nbsp;";
+
+    var li1 = document.createElement("li");
+    li1.style.fontFamily = "Courier";
+    li1.innerHTML = "Sound mode:";
+
+    var li2 = document.createElement("li");
+    li2.style.fontFamily = "Courier";
+
+    var sel = document.createElement("select");
+    sel.onchange = function () { updatemode(); };
+    sel.id = "soundmode";
+    sel.style.display = "inherit";
+
+    var op1 = document.createElement("option");
+    op1.value = "sine";
+    op1.innerHTML = "Sine";
+    var op2 = document.createElement("option");
+    op2.value = "square";
+    op2.innerHTML = "Square";
+    var op3 = document.createElement("option");
+    op3.value = "sawtooth";
+    op3.innerHTML = "Sawtooth";
+    var op4 = document.createElement("option");
+    op4.value = "triangle";
+    op4.innerHTML = "Triangle";
+    switch(getcookie("soundmode")) {
+	    case "sine":
+	    	op1.selected = "selected";
+	    	break;
+	    case "square":
+	    	op2.selected = "selected";
+	    	break;
+	    case "sawtooth":
+	    	op3.selected = "selected";
+	    	break;
+	    case "triangle":
+	    	op4.selected = "selected";
+	    	break;
+	    default:
+	    	op4.selected = "selected";
+	    	break;
+    }
+
+    sel.appendChild(op1);
+    sel.appendChild(op2);
+    sel.appendChild(op3);
+    sel.appendChild(op4);
+
+    li2.appendChild(sel);
+
+    var li3 = document.createElement("li");
+    li3.style.fontFamily = "Courier";
+    li3.innerHTML = "Attack:";
+
+    var li4 = document.createElement("li");
+    li4.style.fontFamily = "Courier";
+
+    var sl1 = document.createElement("input");
+    sl1.onchange = function () { updateattack(); };
+    sl1.id = "attackslider";
+    sl1.type = "range";
+    sl1.min = "5";
+    sl1.max = "495";
+    sl1.step = "5";
+    sl1.value = getcookie("soundattack") != "" ? getcookie("soundattack") : 5;
+
+    li4.appendChild(sl1);
+
+    var li5 = document.createElement("li");
+    li5.style.fontFamily = "Courier";
+    li5.innerHTML = "Decay:";
+
+    var li6 = document.createElement("li");
+    li6.style.fontFamily = "Courier";
+
+    var sl2 = document.createElement("input");
+    sl2.onchange = function () { updatedecay(); };
+    sl2.id = "decayslider";
+    sl2.type = "range";
+    sl2.min = "300";
+    sl2.max = "995";
+    sl2.step = "5";
+    sl2.value = getcookie("sounddecay") != "" ? getcookie("sounddecay") : 995;
+
+    li6.appendChild(sl2);
+
+    var but = document.createElement("button");
+    but.innerHTML = "Play";
+    but.onclick = function () { playmusic(); };
+
+    var out = document.getElementsByClassName("booksidebar")[1];
+    out.appendChild(li1);
+    out.appendChild(li2);
+    out.appendChild(li3);
+    out.appendChild(li4);
+    out.appendChild(li5);
+    out.appendChild(li6);
+    out.appendChild(but);
+}
+
+function updatemode() {
+    mode = document.getElementById("soundmode").value;
+    setcookie("soundmode", mode, 500);
+}
+
+function updateattack() {
+    attack = document.getElementById("attackslider").value;
+    setcookie("soundattack", attack, 500);
+}
+
+function updatedecay() {
+    decay = document.getElementById("decayslider").value;
+    setcookie("sounddecay", decay, 500);
+}
+
+function setcookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getcookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(";");
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==" ") c = c.substring(1);
+        if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+    }
+    return "";
+}
+
+
+jqCode=document.createElement("script");
+    jqCode.setAttribute("src","http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js");
+    document.body.appendChild(jqCode);
+
+    setTimeout(function()
+    {
+      addcontrols();
+    },1000);
+void(0);'>Bookmark this link!</a>
+
+</body>
+</html>
